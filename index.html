@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="短剧">
+<meta name="theme-color" content="#0a0a0c">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-180.png">
+<title>短剧</title>
+<style>
+:root{--bg:#0a0a0c;--card:#16161c;--line:#272730;--txt:#f3f3f6;--dim:#8b8b9a;--acc:#ff4d6d}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--txt);font:15px/1.5 -apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue",sans-serif;overscroll-behavior-y:contain}
+body{padding-bottom:env(safe-area-inset-bottom)}
+a{color:inherit;text-decoration:none}
+#hdr{position:sticky;top:0;z-index:20;background:rgba(10,10,12,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line);padding:calc(env(safe-area-inset-top) + 8px) 14px 10px}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.brand{font-size:19px;font-weight:700;letter-spacing:.5px}
+.brand b{color:var(--acc)}
+.chip{background:var(--card);border:1px solid var(--line);color:var(--dim);font-size:12px;padding:5px 10px;border-radius:20px}
+.chip:active{background:#22222b}
+.search{margin-top:8px}
+.search input{width:100%;background:var(--card);border:1px solid var(--line);border-radius:11px;padding:9px 12px;color:var(--txt);font-size:15px;outline:none;-webkit-appearance:none}
+.search input::placeholder{color:#5d5d6b}
+#view{padding:12px 12px 90px}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:11px}
+.card{background:var(--card);border-radius:13px;overflow:hidden;position:relative}
+.card:active{opacity:.75}
+.card .pw{position:relative;width:100%;aspect-ratio:3/4;background:#1d1d24}
+.card .pw img{width:100%;height:100%;object-fit:cover;display:block}
+.card .ep{position:absolute;right:7px;bottom:7px;background:rgba(0,0,0,.72);font-size:11px;padding:2px 6px;border-radius:6px;color:#e6e6ee}
+.card .sc{position:absolute;left:7px;top:7px;background:rgba(255,77,109,.9);font-size:11px;font-weight:600;padding:2px 6px;border-radius:6px}
+.card .ti{padding:8px 9px 10px;font-size:13px;line-height:1.35}
+.card .ti span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.more{text-align:center;color:var(--dim);font-size:13px;padding:20px 0}
+.det{padding:0 2px}
+.dh{display:flex;gap:13px;margin-bottom:16px}
+.dh .cv{width:118px;flex:none;aspect-ratio:3/4;border-radius:12px;overflow:hidden;background:#1d1d24}
+.dh .cv img{width:100%;height:100%;object-fit:cover;display:block}
+.dh .meta{flex:1;min-width:0}
+.dh h2{font-size:19px;margin:0 0 6px;line-height:1.3}
+.dh .sub{color:var(--dim);font-size:12.5px;margin-bottom:8px}
+.dh .tags{display:flex;flex-wrap:wrap;gap:6px}
+.dh .tags i{font-style:normal;font-size:11.5px;color:#c3c3cf;background:#1e1e26;border:1px solid var(--line);padding:2px 7px;border-radius:6px}
+.play-btn{display:block;width:100%;background:var(--acc);color:#fff;border:0;border-radius:12px;padding:13px;font-size:16px;font-weight:600;margin:4px 0 18px}
+.play-btn:active{opacity:.8}
+.sec{font-size:14px;color:var(--dim);margin:0 0 9px;display:flex;align-items:center;gap:8px}
+.sec:after{content:"";flex:1;height:1px;background:var(--line)}
+.desc{color:#b9b9c6;font-size:13.5px;line-height:1.65;white-space:pre-wrap;margin:0 0 20px;max-height:6.6em;overflow:hidden;position:relative}
+.desc.on{max-height:none}
+.eps{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:20px}
+.eps button{background:var(--card);border:1px solid var(--line);color:#dcdce6;border-radius:9px;padding:9px 0;font-size:13px;font-variant-numeric:tabular-nums}
+.eps button:active{background:#2a2a34}
+.eps button.cur{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:600}
+#pl{position:fixed;inset:0;z-index:60;background:#000;display:none;flex-direction:column}
+#pl.on{display:flex}
+#pl .top{position:absolute;top:0;left:0;right:0;z-index:2;padding:calc(env(safe-area-inset-top) + 8px) 12px 10px;display:flex;justify-content:space-between;align-items:center;background:linear-gradient(180deg,rgba(0,0,0,.75),transparent)}
+#pl .top button{background:rgba(255,255,255,.14);border:0;color:#fff;width:34px;height:34px;border-radius:50%;font-size:17px;line-height:1}
+#pl .stage{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;background:#000}
+#pl video{width:100%;height:100%;object-fit:contain;background:#000}
+#pl .bot{position:absolute;bottom:0;left:0;right:0;z-index:2;padding:10px 12px calc(env(safe-area-inset-bottom) + 10px);background:linear-gradient(0deg,rgba(0,0,0,.8),transparent)}
+#pl .epsr{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+#pl .epsr::-webkit-scrollbar{display:none}
+#pl .epsr button{flex:none;background:rgba(255,255,255,.14);border:0;color:#fff;border-radius:8px;padding:8px 14px;font-size:13px}
+#pl .epsr button.cur{background:var(--acc);font-weight:700}
+#tip{position:fixed;left:50%;bottom:88px;transform:translateX(-50%);background:rgba(0,0,0,.88);color:#fff;font-size:13px;padding:9px 16px;border-radius:20px;z-index:99;opacity:0;transition:opacity .25s;pointer-events:none;max-width:86%;text-align:center}
+#tip.on{opacity:1}
+.empty{text-align:center;color:var(--dim);padding:70px 20px;font-size:14px}
+.spin{width:22px;height:22px;border:2px solid #33333f;border-top-color:var(--acc);border-radius:50%;animation:sp .7s linear infinite;margin:60px auto}
+@keyframes sp{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<header id="hdr">
+  <div class="bar">
+    <div class="brand">短剧<b>·</b>H5</div>
+    <button class="chip" id="btnLine">线路 1</button>
+  </div>
+  <div class="search"><input id="q" type="search" placeholder="搜剧名、演员、标签" enterkeyhint="search" autocomplete="off"></div>
+</header>
+<main id="view"><div class="spin"></div></main>
+
+<div id="pl">
+  <div class="top">
+    <button id="btnBack">‹</button>
+    <button id="btnFs">⛶</button>
+  </div>
+  <div class="stage"><video id="vid" playsinline webkit-playsinline controls preload="none" poster=""></video></div>
+  <div class="bot"><div class="epsr" id="epsr"></div></div>
+</div>
+<div id="tip"></div>
+
+<script>
+var BASES=[
+ "https://thu.kozhmami.cc","https://pku.kozhmami.cc","https://fdu.kozhmami.cc",
+ "https://sjtu.kozhmami.cc","https://zju.kozhmami.cc","https://nju.kozhmami.cc",
+ "https://thu.ssenpilj.cc","https://pku.ssenpilj.cc","https://fdu.ssenpilj.cc",
+ "https://sjtu.ssenpilj.cc","https://zju.ssenpilj.cc","https://nju.ssenpilj.cc"
+];
+var S={base:"",list:[],page:1,pages:1,busy:false,cur:null,ep:1,hls:null,bsIdx:0};
+var $=function(id){return document.getElementById(id)};
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]})}
+var tipT;
+function tip(m){var e=$("tip");e.textContent=m;e.classList.add("on");clearTimeout(tipT);tipT=setTimeout(function(){e.classList.remove("on")},2200)}
+
+function fetchT(url,opt,ms){
+  ms=ms||12000;
+  var ac=new AbortController();var t=setTimeout(function(){ac.abort()},ms);
+  opt=opt||{};opt.signal=ac.signal;
+  return fetch(url,opt).then(function(r){clearTimeout(t);return r}).catch(function(e){clearTimeout(t);throw e});
+}
+
+function pickBase(){
+  var saved=localStorage.getItem("hg.base");
+  if(saved){S.base=saved;return Promise.resolve(saved)}
+  var jobs=BASES.map(function(b,i){
+    return fetchT(b+"/api/videos?page=1&size=1",{cache:"no-store"},9000)
+      .then(function(r){return r.json()})
+      .then(function(j){if(j&&j.data&&j.data.items&&j.data.items.length)return {b:b,i:i};throw 0});
+  });
+  return new Promise(function(res){
+    var done=false,n=0;
+    jobs.forEach(function(p,i){
+      p.then(function(v){if(!done){done=true;S.base=v.b;S.bsIdx=v.i;res(v.b)}}).catch(function(){if(++n===jobs.length&&!done){done=true;S.base=BASES[0];res(BASES[0])}});
+    });
+  });
+}
+
+function api(path,opt){
+  opt=opt||{};
+  opt.headers=Object.assign({"Accept":"application/json"},opt.headers||{});
+  return fetchT(S.base+path,opt,20000).then(function(r){return r.json()});
+}
+
+function renderList(){
+  var v=$("view");
+  if(!S.list.length){v.innerHTML='<div class="empty">没有找到结果</div>';return}
+  var h='<div class="grid">';
+  for(var i=0;i<S.list.length;i++){
+    var it=S.list[i];
+    h+='<a class="card" href="#/v/'+it.id+'">'
+      +'<div class="pw"><img loading="lazy" src="'+esc(it.cover)+'" alt="">'
+      +(it.score?'<div class="sc">'+esc(it.score)+'</div>':'')
+      +'<div class="ep">'+(it.total_episodes||it.episode_count||"?")+'集</div></div>'
+      +'<div class="ti"><span>'+esc(it.title)+'</span></div></a>';
+  }
+  h+='</div>';
+  h+='<div class="more" id="more">'+(S.page<S.pages?'加载中…':'— 到底了 —')+'</div>';
+  v.innerHTML=h;
+  watchMore();
+}
+
+var mo;
+function watchMore(){
+  if(mo)mo.disconnect();
+  var t=$("more");if(!t)return;
+  mo=new IntersectionObserver(function(es){
+    if(es[0].isIntersecting)loadMore();
+  },{rootMargin:"300px"});
+  mo.observe(t);
+}
+
+function loadMore(){
+  if(S.busy||S.page>=S.pages)return;
+  S.busy=true;S.page++;
+  var kw=$("q").value.trim();
+  var p="/api/videos?page="+S.page+"&size=20"+(kw?"&keyword="+encodeURIComponent(kw):"");
+  api(p).then(function(j){
+    var items=(j.data&&j.data.items)||[];
+    S.list=S.list.concat(items);
+    if(j.data&&j.data.pagination)S.pages=j.data.pagination.pages||S.pages;
+    S.busy=false;
+    var g=document.querySelector(".grid");
+    if(!g){renderList();return}
+    var add="";
+    for(var i=0;i<items.length;i++){
+      var it=items[i];
+      add+='<a class="card" href="#/v/'+it.id+'">'
+        +'<div class="pw"><img loading="lazy" src="'+esc(it.cover)+'" alt="">'
+        +(it.score?'<div class="sc">'+esc(it.score)+'</div>':'')
+        +'<div class="ep">'+(it.total_episodes||it.episode_count||"?")+'集</div></div>'
+        +'<div class="ti"><span>'+esc(it.title)+'</span></div></a>';
+    }
+    g.insertAdjacentHTML("beforeend",add);
+    var m=$("more");if(m)m.textContent=(S.page<S.pages?"加载中…":"— 到底了 —");
+    watchMore();
+  }).catch(function(){S.busy=false;var m=$("more");if(m)m.textContent="加载失败，下拉重试";});
+}
+
+function loadList(reset){
+  if(reset){S.page=1;S.list=[];S.busy=false;$("view").innerHTML='<div class="spin"></div>'}
+  var kw=$("q").value.trim();
+  var p="/api/videos?page=1&size=20"+(kw?"&keyword="+encodeURIComponent(kw):"");
+  return api(p).then(function(j){
+    S.list=(j.data&&j.data.items)||[];
+    S.pages=(j.data&&j.data.pagination&&j.data.pagination.pages)||1;
+    S.page=1;S.busy=false;
+    if(!S.list.length){$("view").innerHTML='<div class="empty">'+(kw?"没搜到「"+esc(kw)+"」":"没有内容")+'</div>';return}
+    renderList();
+  }).catch(function(e){
+    $("view").innerHTML='<div class="empty">网络不通<br><br><button class="chip" onclick="location.reload()">重试</button></div>';
+  });
+}
+
+function showDetail(id){
+  $("view").innerHTML='<div class="spin"></div>';
+  api("/api/videos/"+id).then(function(j){
+    var d=j.data||j;S.cur=d;
+    var eps=d.episodes||[];
+    var h='<div class="det">';
+    h+='<div class="dh"><div class="cv"><img src="'+esc(d.cover)+'" alt=""></div><div class="meta">';
+    h+='<h2>'+esc(d.title)+'</h2>';
+    h+='<div class="sub">'+(d.score?'评分 '+esc(d.score)+' · ':'')+eps.length+' 集'
+      +(d.author&&d.author.name?' · '+esc(d.author.name):'')+'</div>';
+    if(d.tags&&d.tags.length){
+      h+='<div class="tags">';
+      for(var i=0;i<Math.min(d.tags.length,4);i++)h+='<i>'+esc(typeof d.tags[i]==="object"?d.tags[i].name:d.tags[i])+'</i>';
+      h+='</div>';
+    }
+    h+='</div></div>';
+    h+='<button class="play-btn" onclick="play(1)">▶ 从第 1 集开始</button>';
+    if(d.description){
+      h+='<div class="sec">简介</div>';
+      h+='<div class="desc" id="ds">'+esc(d.description)+'</div>';
+    }
+    h+='<div class="sec">选集</div><div class="eps">';
+    for(var e=0;e<eps.length;e++){
+      h+='<button onclick="play('+eps[e].ep_num+')">'+eps[e].ep_num+'</button>';
+    }
+    h+='</div></div>';
+    $("view").innerHTML=h;
+    var ds=$("ds");
+    if(ds)ds.onclick=function(){ds.classList.toggle("on")};
+    window.scrollTo(0,0);
+  }).catch(function(){
+    $("view").innerHTML='<div class="empty">详情加载失败<br><br><button class="chip" onclick="showDetail('+id+')">重试</button></div>';
+  });
+}
+
+function buildEps(){
+  var d=S.cur;if(!d)return;
+  var eps=d.episodes||[];
+  var h="";
+  for(var i=0;i<eps.length;i++){
+    var n=eps[i].ep_num;
+    h+='<button class="'+(n===S.ep?"cur":"")+'" onclick="play('+n+')">'+n+'</button>';
+  }
+  $("epsr").innerHTML=h;
+  var cur=$("epsr").querySelector(".cur");
+  if(cur)cur.scrollIntoView({inline:"center",block:"nearest"});
+}
+
+function nativeHls(){
+  var v=document.createElement("video");
+  return !!v.canPlayType("application/vnd.apple.mpegurl");
+}
+
+function loadHlsJs(){
+  if(window.Hls)return Promise.resolve();
+  return new Promise(function(res,rej){
+    var s=document.createElement("script");
+    s.src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js";
+    s.onload=res;s.onerror=rej;
+    document.head.appendChild(s);
+  });
+}
+
+function destroyHls(){
+  if(S.hls){try{S.hls.destroy()}catch(e){}S.hls=null}
+}
+
+function play(ep){
+  if(!S.cur)return;
+  S.ep=ep;
+  var d=S.cur;
+  $("pl").classList.add("on");
+  buildEps();
+  var vid=$("vid");
+  vid.poster=d.cover||"";
+  tip("第 "+ep+" 集 加载中…");
+  api("/api/videos/"+d.id+"/episodes/"+ep+"/playback",{
+    method:"POST",headers:{"Content-Type":"application/json"},body:"{}"
+  }).then(function(j){
+    var st=(j.data&&j.data.streams)||{};
+    var url=st.main||st.hevc;
+    if(!url)throw new Error("no stream");
+    destroyHls();
+    if(nativeHls()){
+      vid.src=url;
+      vid.load();
+      var p=vid.play();if(p&&p.catch)p.catch(function(){});
+    }else{
+      loadHlsJs().then(function(){
+        if(window.Hls&&window.Hls.isSupported()){
+          S.hls=new window.Hls({maxBufferLength:30});
+          S.hls.loadSource(url);
+          S.hls.attachMedia(vid);
+          S.hls.on(window.Hls.Events.MANIFEST_PARSED,function(){vid.play().catch(function(){})});
+        }else{vid.src=url;vid.play().catch(function(){})}
+      }).catch(function(){vid.src=url;vid.play().catch(function(){})});
+    }
+    tip("");
+  }).catch(function(e){
+    tip("播放地址获取失败，换条线路再试");
+  });
+}
+
+var vid=$("vid");
+vid.addEventListener("ended",function(){
+  var eps=(S.cur&&S.cur.episodes)||[];
+  for(var i=0;i<eps.length;i++){
+    if(eps[i].ep_num===S.ep&&eps[i+1]){play(eps[i+1].ep_num);return}
+  }
+});
+vid.addEventListener("error",function(){tip("播放出错，点右上角返回重选剧集")});
+
+$("btnBack").onclick=function(){
+  $("pl").classList.remove("on");
+  vid.pause();vid.removeAttribute("src");vid.load();
+  destroyHls();
+};
+$("btnFs").onclick=function(){
+  if(vid.webkitEnterFullscreen)vid.webkitEnterFullscreen();
+  else if(vid.requestFullscreen)vid.requestFullscreen();
+};
+$("btnLine").onclick=function(){
+  S.bsIdx=(S.bsIdx+1)%BASES.length;
+  S.base=BASES[S.bsIdx];
+  localStorage.setItem("hg.base",S.base);
+  $("btnLine").textContent="线路 "+(S.bsIdx+1);
+  tip("已切到线路 "+(S.bsIdx+1)+"："+S.base.replace("https://",""));
+  route(true);
+};
+
+var qT;
+$("q").addEventListener("input",function(){
+  clearTimeout(qT);
+  qT=setTimeout(function(){loadList(true)},420);
+});
+$("q").addEventListener("keydown",function(e){
+  if(e.key==="Enter"){this.blur();clearTimeout(qT);loadList(true)}
+});
+
+function route(force){
+  var h=location.hash||"#/";
+  var m=h.match(/^#\/v\/(\d+)/);
+  if(m){showDetail(parseInt(m[1],10))}
+  else{loadList(true)}
+}
+
+window.addEventListener("hashchange",function(){route()});
+
+pickBase().then(function(b){
+  if(!b){$("view").innerHTML='<div class="empty">所有线路都连不上<br><br><button class="chip" onclick="location.reload()">重试</button></div>';return}
+  $("btnLine").textContent="线路 "+(S.bsIdx+1);
+  route();
+});
+</script>
+</body>
+</html>
