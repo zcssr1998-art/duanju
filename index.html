@@ -89,7 +89,7 @@ a{color:inherit;text-decoration:none}
     <button id="btnBack">‹</button>
     <button id="btnFs">⛶</button>
   </div>
-  <div class="stage"><video id="vid" playsinline webkit-playsinline controls preload="none" poster=""></video></div>
+  <div class="stage"><video id="vid" playsinline webkit-playsinline x5-playsinline controls preload="metadata" poster=""></video></div>
   <div class="bot"><div class="epsr" id="epsr"></div></div>
 </div>
 <div id="tip"></div>
@@ -254,9 +254,20 @@ function buildEps(){
   if(cur)cur.scrollIntoView({inline:"center",block:"nearest"});
 }
 
+// Chrome 对 canPlayType('application/vnd.apple.mpegurl') 也返回 "maybe"，会假报支持，
+// 所以只认 iOS/Safari 走原生 HLS，其余一律用 hls.js。
+function isIOS(){
+  var u=navigator.userAgent||"";
+  if(/iPad|iPhone|iPod/.test(u))return true;
+  if(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1)return true; // iPadOS 13+
+  return false;
+}
+function isSafari(){
+  var u=navigator.userAgent||"";
+  return /Safari/.test(u)&&!/Chrome|CriOS|Edg|Android/.test(u);
+}
 function nativeHls(){
-  var v=document.createElement("video");
-  return !!v.canPlayType("application/vnd.apple.mpegurl");
+  return isIOS()||isSafari();
 }
 
 function loadHlsJs(){
@@ -298,10 +309,24 @@ function play(ep){
     }else{
       loadHlsJs().then(function(){
         if(window.Hls&&window.Hls.isSupported()){
-          S.hls=new window.Hls({maxBufferLength:30});
+          var H=window.Hls;
+          S.hls=new H({maxBufferLength:30,enableWorker:true});
           S.hls.loadSource(url);
           S.hls.attachMedia(vid);
-          S.hls.on(window.Hls.Events.MANIFEST_PARSED,function(){vid.play().catch(function(){})});
+          S.hls.on(H.Events.MANIFEST_PARSED,function(){vid.play().catch(function(){})});
+          // 网络/媒体错误自愈：网络错误原地重试，媒体错误先解绑重挂，致命错误才提示
+          S.hls.on(H.Events.ERROR,function(ev,dd){
+            if(!dd||!dd.fatal)return;
+            if(dd.type===H.ErrorTypes.NETWORK_ERROR){
+              tip("网络抖动，正在重连…");
+              S.hls.startLoad();
+            }else if(dd.type===H.ErrorTypes.MEDIA_ERROR){
+              tip("解码异常，正在恢复…");
+              S.hls.recoverMediaError();
+            }else{
+              tip("播放出错，换条线路再试");
+            }
+          });
         }else{vid.src=url;vid.play().catch(function(){})}
       }).catch(function(){vid.src=url;vid.play().catch(function(){})});
     }
