@@ -102,6 +102,9 @@ var BASES=[
  "https://sjtu.ssenpilj.cc","https://zju.ssenpilj.cc","https://nju.ssenpilj.cc"
 ];
 var S={base:"",list:[],page:1,pages:1,busy:false,cur:null,ep:1,hls:null,bsIdx:0};
+// 续播：记住上次看到哪部剧的哪一集哪儿
+function savePos(){try{localStorage.setItem("hg.pos",JSON.stringify({id:S.cur?S.cur.id:0,ep:S.ep,t:S.cur?S.cur.title:""}))}catch(e){}}
+function loadPos(){try{return JSON.parse(localStorage.getItem("hg.pos")||"null")}catch(e){return null}}
 var $=function(id){return document.getElementById(id)};
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]})}
 var tipT;
@@ -280,6 +283,19 @@ function loadHlsJs(){
   });
 }
 
+// 续播：同一部剧同一集，从上次的秒数接着看（只在本集内跳，换集不跳）
+function resumeSeek(vid){
+  try{
+    var pos=loadPos();
+    if(!pos||!S.cur||pos.id!==S.cur.id||pos.ep!==S.ep)return;
+    var t=parseFloat(localStorage.getItem("hg.t")||"0");
+    if(t>5&&t<((vid.duration||1e9)-10)&&Math.abs(vid.currentTime-t)>8){
+      vid.currentTime=t;
+      tip("从 "+Math.floor(t/60)+":"+("0"+Math.floor(t%60)).slice(-2)+" 继续");
+    }
+  }catch(e){}
+}
+
 function destroyHls(){
   if(S.hls){try{S.hls.destroy()}catch(e){}S.hls=null}
 }
@@ -292,6 +308,7 @@ function play(ep){
   buildEps();
   var vid=$("vid");
   vid.poster=d.cover||"";
+  savePos();
   tip("第 "+ep+" 集 加载中…");
   fetchT(S.base+"/api/videos/"+d.id+"/episodes/"+ep+"/playback",{
     method:"POST",
@@ -305,6 +322,10 @@ function play(ep){
     if(nativeHls()){
       vid.src=url;
       vid.load();
+      vid.addEventListener("loadedmetadata",function once(){
+        vid.removeEventListener("loadedmetadata",once);
+        resumeSeek(vid);
+      });
       var p=vid.play();if(p&&p.catch)p.catch(function(){});
     }else{
       loadHlsJs().then(function(){
@@ -313,7 +334,10 @@ function play(ep){
           S.hls=new H({maxBufferLength:30,enableWorker:true});
           S.hls.loadSource(url);
           S.hls.attachMedia(vid);
-          S.hls.on(H.Events.MANIFEST_PARSED,function(){vid.play().catch(function(){})});
+          S.hls.on(H.Events.MANIFEST_PARSED,function(){
+            resumeSeek(vid);
+            vid.play().catch(function(){});
+          });
           // 网络/媒体错误自愈：网络错误原地重试，媒体错误先解绑重挂，致命错误才提示
           S.hls.on(H.Events.ERROR,function(ev,dd){
             if(!dd||!dd.fatal)return;
@@ -344,6 +368,10 @@ vid.addEventListener("ended",function(){
   }
 });
 vid.addEventListener("error",function(){tip("播放出错，点右上角返回重选剧集")});
+// 每 5 秒记一次播放位置，退出后能从原处接着看
+setInterval(function(){
+  try{ if(S.cur&&!vid.paused&&vid.currentTime>5) localStorage.setItem("hg.t",String(Math.floor(vid.currentTime))); }catch(e){}
+},5000);
 
 $("btnBack").onclick=function(){
   $("pl").classList.remove("on");
