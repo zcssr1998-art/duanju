@@ -106,6 +106,9 @@ var S={base:"",list:[],page:1,pages:1,busy:false,cur:null,ep:1,hls:null,bsIdx:0}
 function savePos(){try{localStorage.setItem("hg.pos",JSON.stringify({id:S.cur?S.cur.id:0,ep:S.ep,t:S.cur?S.cur.title:""}))}catch(e){}}
 function loadPos(){try{return JSON.parse(localStorage.getItem("hg.pos")||"null")}catch(e){return null}}
 var $=function(id){return document.getElementById(id)};
+// 上游封面图是加密的（不是 JPEG 头），必须经 hghub 中转解密才能显示
+var IMGPROXY="https://hghub.pages.dev/media/img?u=";
+function pic(u){return u?(IMGPROXY+encodeURIComponent(u)):""};
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]})}
 var tipT;
 function tip(m){var e=$("tip");e.textContent=m;e.classList.add("on");clearTimeout(tipT);tipT=setTimeout(function(){e.classList.remove("on")},2200)}
@@ -146,7 +149,7 @@ function renderList(){
   for(var i=0;i<S.list.length;i++){
     var it=S.list[i];
     h+='<a class="card" href="#/v/'+it.id+'">'
-      +'<div class="pw"><img loading="lazy" src="'+esc(it.cover)+'" alt="">'
+      +'<div class="pw"><img loading="lazy" src="'+esc(pic(it.cover))+'" alt="" onerror="this.style.opacity=0">'
       +(it.score?'<div class="sc">'+esc(it.score)+'</div>':'')
       +'<div class="ep">'+(it.total_episodes||it.episode_count||"?")+'集</div></div>'
       +'<div class="ti"><span>'+esc(it.title)+'</span></div></a>';
@@ -183,7 +186,7 @@ function loadMore(){
     for(var i=0;i<items.length;i++){
       var it=items[i];
       add+='<a class="card" href="#/v/'+it.id+'">'
-        +'<div class="pw"><img loading="lazy" src="'+esc(it.cover)+'" alt="">'
+        +'<div class="pw"><img loading="lazy" src="'+esc(pic(it.cover))+'" alt="" onerror="this.style.opacity=0">'
         +(it.score?'<div class="sc">'+esc(it.score)+'</div>':'')
         +'<div class="ep">'+(it.total_episodes||it.episode_count||"?")+'集</div></div>'
         +'<div class="ti"><span>'+esc(it.title)+'</span></div></a>';
@@ -215,7 +218,7 @@ function showDetail(id){
     var d=j.data||j;S.cur=d;
     var eps=d.episodes||[];
     var h='<div class="det">';
-    h+='<div class="dh"><div class="cv"><img src="'+esc(d.cover)+'" alt=""></div><div class="meta">';
+    h+='<div class="dh"><div class="cv"><img src="'+esc(pic(d.cover))+'" alt=""></div><div class="meta">';
     h+='<h2>'+esc(d.title)+'</h2>';
     h+='<div class="sub">'+(d.score?'评分 '+esc(d.score)+' · ':'')+eps.length+' 集'
       +(d.author&&d.author.name?' · '+esc(d.author.name):'')+'</div>';
@@ -307,7 +310,7 @@ function play(ep){
   $("pl").classList.add("on");
   buildEps();
   var vid=$("vid");
-  vid.poster=d.cover||"";
+  vid.poster=pic(d.cover)||"";
   savePos();
   tip("第 "+ep+" 集 加载中…");
   fetchT(S.base+"/api/videos/"+d.id+"/episodes/"+ep+"/playback",{
