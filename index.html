@@ -282,9 +282,11 @@ function play(ep){
   var vid=$("vid");
   vid.poster=d.cover||"";
   tip("第 "+ep+" 集 加载中…");
-  api("/api/videos/"+d.id+"/episodes/"+ep+"/playback",{
-    method:"POST",headers:{"Content-Type":"application/json"},body:"{}"
-  }).then(function(j){
+  fetchT(S.base+"/api/videos/"+d.id+"/episodes/"+ep+"/playback",{
+    method:"POST",
+    headers:{"Content-Type":"application/x-www-form-urlencoded"},
+    body:""
+  },25000).then(function(r){return r.json()}).then(function(j){
     var st=(j.data&&j.data.streams)||{};
     var url=st.main||st.hevc;
     if(!url)throw new Error("no stream");
